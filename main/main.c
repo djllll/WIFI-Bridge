@@ -38,8 +38,8 @@
 */
 
 /* STA Configuration */
-#define EXAMPLE_ESP_WIFI_STA_SSID           "88888888"
-#define EXAMPLE_ESP_WIFI_STA_PASSWD         "12345678"
+#define EXAMPLE_ESP_WIFI_STA_SSID           "SuMatrixMed"
+#define EXAMPLE_ESP_WIFI_STA_PASSWD         "Matrix502"
 #define EXAMPLE_ESP_MAXIMUM_RETRY           3
 
 
@@ -73,8 +73,8 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                  MAC2STR(event->mac), event->aid);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
         wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
-        ESP_LOGI(TAG_AP, "Station "MACSTR" left, AID=%d",
-                 MAC2STR(event->mac), event->aid);
+        ESP_LOGI(TAG_AP, "Station "MACSTR" left, AID=%d, reason:%d",
+                 MAC2STR(event->mac), event->aid, event->reason);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
         ESP_LOGI(TAG_STA, "Station started");
@@ -110,8 +110,6 @@ esp_netif_t *wifi_init_softap(void)
     }
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
-	uint8_t mac[] = {0x08,0xaa,0x89,0x7d,0xc1,0x69}; //97
-	esp_wifi_set_mac(WIFI_IF_AP,mac);
 
     ESP_LOGI(TAG_AP, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
              EXAMPLE_ESP_WIFI_AP_SSID, EXAMPLE_ESP_WIFI_AP_PASSWD, EXAMPLE_ESP_WIFI_CHANNEL);
@@ -130,7 +128,7 @@ esp_netif_t *wifi_init_sta(void)
             .password = EXAMPLE_ESP_WIFI_STA_PASSWD,
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
             .failure_retry_cnt = EXAMPLE_ESP_MAXIMUM_RETRY,
-            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
+            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (password len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
             * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
@@ -181,6 +179,7 @@ void app_main(void)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
+
     /* Initialize AP */
     ESP_LOGI(TAG_AP, "ESP_WIFI_MODE_AP");
     esp_netif_t *esp_netif_ap = wifi_init_softap();
@@ -188,6 +187,9 @@ void app_main(void)
     /* Initialize STA */
     ESP_LOGI(TAG_STA, "ESP_WIFI_MODE_STA");
     esp_netif_t *esp_netif_sta = wifi_init_sta();
+
+    uint8_t mac[]={0x08,0xaa,0x89,0x7d,0xc1,0x69};
+    ESP_ERROR_CHECK(esp_wifi_set_mac(ESP_IF_WIFI_AP, mac));
 
     /* Start WiFi */
     ESP_ERROR_CHECK(esp_wifi_start() );
