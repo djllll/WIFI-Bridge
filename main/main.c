@@ -25,6 +25,7 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+#include "driver/gpio.h"
 #if IP_NAPT
 #include "lwip/lwip_napt.h"
 #endif
@@ -38,14 +39,14 @@
 */
 
 /* STA Configuration */
-#define EXAMPLE_ESP_WIFI_STA_SSID           "SuMatrixMed"
-#define EXAMPLE_ESP_WIFI_STA_PASSWD         "Matrix502"
+#define EXAMPLE_ESP_WIFI_STA_SSID           "1210"
+#define EXAMPLE_ESP_WIFI_STA_PASSWD         "13701416867"
 #define EXAMPLE_ESP_MAXIMUM_RETRY           3
 
 
 /* AP Configuration */
-#define EXAMPLE_ESP_WIFI_AP_SSID            "esp"
-#define EXAMPLE_ESP_WIFI_AP_PASSWD          "12345678"
+#define EXAMPLE_ESP_WIFI_AP_SSID            "SuMatrixMed"
+#define EXAMPLE_ESP_WIFI_AP_PASSWD          "Matrix502"
 #define EXAMPLE_ESP_WIFI_CHANNEL            11
 #define EXAMPLE_MAX_STA_CONN                2
 
@@ -147,6 +148,15 @@ esp_netif_t *wifi_init_sta(void)
 
 void app_main(void)
 {
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1<<1UL);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+    gpio_set_level(1,1);
+
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
