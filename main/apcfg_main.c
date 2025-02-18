@@ -30,6 +30,7 @@ extern const char root_start[] asm("_binary_root_html_start");
 extern const char root_end[] asm("_binary_root_html_end");
 static const char *TAG = "dns_server";
 
+extern  SemaphoreHandle_t sema_restart_to_bridge;
 
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
@@ -144,10 +145,8 @@ static esp_err_t root_post_handler(httpd_req_t *req)
         parse_key_value(token, key, value);
         ESP_LOGI(TAG, "Key: %s, Value: %s", key, value);
         if(strcmp((const char *)key,"sta_name")==0){
-            ESP_LOGI(TAG,"Match Sta Name");
             strcpy(cfg.sta_name,(const char*)value);
         }else if(strcmp((const char *)key,"sta_pass")==0){
-            ESP_LOGI(TAG,"Match Sta Pass");
             strcpy(cfg.sta_pass,(const char*)value);
         }else if(strcmp((const char *)key,"ap_name")==0){
             strcpy(cfg.ap_name,(const char*)value);
@@ -156,7 +155,7 @@ static esp_err_t root_post_handler(httpd_req_t *req)
         }else if(strcmp((const char *)key,"ap_mac")==0){
             mac_string_to_array(value,cfg.mac);
         }else{
-            ESP_LOGI(TAG,"Match Unkown");
+            ESP_LOGW(TAG,"Match Unkown");
         }
         token = strtok(NULL, "&");
     }
@@ -165,8 +164,10 @@ static esp_err_t root_post_handler(httpd_req_t *req)
 
 
     // 发送响应
-    const char *resp_str = "POST request received successfully";
+    const char *resp_str = "Reboot...";
     httpd_resp_send(req, resp_str, strlen(resp_str));
+
+    xSemaphoreGive(sema_restart_to_bridge);
 
     return ESP_OK;
 }

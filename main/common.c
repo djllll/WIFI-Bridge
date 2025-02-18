@@ -1,6 +1,7 @@
 #include "common.h"
 #include "nvs_flash.h"
-
+#include "esp_system.h"
+#include "driver/gpio.h"
 
 /**
  * @brief 
@@ -47,4 +48,58 @@ uint8_t app_config_load(app_config_t *config)
         sumcheck = (uint8_t)(((uint16_t)sumcheck + config->sta_pass[i]) & 0xff);
     }
     return sumcheck == config->sumcheck ? CFG_LOAD_SUCCESS : CFG_LOAD_FAIL;
+}
+
+
+uint8_t hci_init(void){
+    gpio_config_t io_conf = {};
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1UL<<LED_GPIO);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1UL<<BTN_GPIO);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+
+    return 0;
+}
+
+
+
+uint8_t hci_deinit(void){
+
+    return 0;
+}
+
+
+void app_restart_to_webcfg(void)
+{
+    nvs_handle_t nvs_handle;
+    nvs_open("APPCFG", NVS_READWRITE, &nvs_handle);
+    nvs_set_u8(nvs_handle, "RST", RST_TO_WEBCFG);
+    nvs_close(nvs_handle);
+    esp_restart();
+}
+void app_restart_to_bridge(void)
+{
+    nvs_handle_t nvs_handle;
+    nvs_open("APPCFG", NVS_READWRITE, &nvs_handle);
+    nvs_set_u8(nvs_handle, "RST", RST_TO_BRIDGE);
+    nvs_close(nvs_handle);
+    esp_restart();
+}
+
+uint8_t app_get_rst_dist(void){
+    uint8_t rst = 0;
+    nvs_handle_t nvs_handle;
+    nvs_open("APPCFG", NVS_READWRITE, &nvs_handle);
+    nvs_get_u8(nvs_handle, "RST", &rst);
+    nvs_close(nvs_handle);
+    return rst;
 }

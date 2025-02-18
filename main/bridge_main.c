@@ -25,7 +25,6 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
-#include "driver/gpio.h"
 #if IP_NAPT
 #include "lwip/lwip_napt.h"
 #endif
@@ -33,6 +32,8 @@
 #include "lwip/sys.h"
 
 #include "common.h"
+#include "freertos/semphr.h"
+
 /* The examples use WiFi configuration that you can set via project configuration menu.
 
    If you'd rather not, just change the below entries to strings with
@@ -92,10 +93,8 @@ esp_netif_t *wifi_init_softap(void)
 
     wifi_config_t wifi_ap_config = {
         .ap = {
-            .ssid = global_cfg.ap_name,
             .ssid_len = strlen(global_cfg.ap_name),
             .channel = ESP_WIFI_CHANNEL,
-            .password = global_cfg.ap_pass,
             .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA2_PSK,
             .pmf_cfg = {
@@ -107,6 +106,9 @@ esp_netif_t *wifi_init_softap(void)
     if (strlen(global_cfg.ap_pass) == 0) {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
+    
+    strcpy((char*)wifi_ap_config.ap.ssid,(const char*)global_cfg.ap_name);
+    strcpy((char*)wifi_ap_config.ap.password,(const char*)global_cfg.ap_pass);
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
 
@@ -123,8 +125,6 @@ esp_netif_t *wifi_init_sta(void)
 
     wifi_config_t wifi_sta_config = {
         .sta = {
-            .ssid = global_cfg.sta_name,
-            .password = global_cfg.sta_pass,
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
             .failure_retry_cnt = ESP_MAXIMUM_RETRY,
             /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (password len => 8).
@@ -136,6 +136,8 @@ esp_netif_t *wifi_init_sta(void)
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
     };
+    strcpy((char*)wifi_sta_config.sta.ssid,(const char*)global_cfg.sta_name);
+    strcpy((char*)wifi_sta_config.sta.password,(const char*)global_cfg.sta_pass);
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_sta_config) );
 
@@ -146,34 +148,12 @@ esp_netif_t *wifi_init_sta(void)
 
 void bridge_main(void)
 {
-    gpio_config_t io_conf = {};
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1<<1UL);
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    ESP_ERROR_CHECK(gpio_config(&io_conf));
-    
-    for(int i=0;i<3;i++){
-        gpio_set_level(1,1);
-        vTaskDelay(30);
-        gpio_set_level(1,0);
-        vTaskDelay(30);
-    }
-    gpio_set_level(1,0);
 
     
     // 初始化netif
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    //初始化 NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
 
     /* Initialize event group */
     s_wifi_event_group = xEventGroupCreate();
@@ -225,12 +205,11 @@ void bridge_main(void)
     /* xEventGroupWaitBits() returns the bits before the call returned,
      * hence we can test which event actually happened. */
     if (bits & WIFI_CONNECTED_BIT) {
-        gpio_set_level(1,1);
         ESP_LOGI(TAG_STA, "connected to ap SSID:%s password:%s",
-                 EXAMPLE_ESP_WIFI_STA_SSID, EXAMPLE_ESP_WIFI_STA_PASSWD);
+                 global_cfg.sta_name, global_cfg.sta_pass);
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG_STA, "Failed to connect to SSID:%s, password:%s",
-                 EXAMPLE_ESP_WIFI_STA_SSID, EXAMPLE_ESP_WIFI_STA_PASSWD);
+                 global_cfg.sta_name, global_cfg.sta_pass);
     } else {
         ESP_LOGE(TAG_STA, "UNEXPECTED EVENT");
         return;
