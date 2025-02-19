@@ -10,7 +10,7 @@
 #define CFG_STR_LEN 33
 
 #define LED_GPIO 4
-#define BTN_GPIO 2
+#define BTN_GPIO 5
 
 #define RST_TO_WEBCFG 0xa1
 #define RST_TO_BRIDGE 0xa2

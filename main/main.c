@@ -24,7 +24,10 @@ void hci_task(const void *param)
 {
     hci_init();
     uint8_t btn_long_press_cnt = 0;
-    while(gpio_get_level(BTN_GPIO)==0);
+    while(gpio_get_level(BTN_GPIO)==0){
+        vTaskDelay(5);
+        ESP_LOGI(TAG,"waiting");
+    }
     while (1) {
         vTaskDelay(2);
         if (xSemaphoreTake(sema_restart_to_bridge, 1)) {
@@ -61,7 +64,7 @@ void app_main(void)
 
     uint8_t ret = app_config_load(&global_cfg);
 
-    xTaskCreate(hci_task, "hicTask", 1024*2, NULL, 1, NULL);
+    xTaskCreate(hci_task, "hicTask", 1024*3, NULL, 1, NULL);
 
     if (ret == CFG_LOAD_SUCCESS && app_get_rst_dist() == RST_TO_BRIDGE) {
         ESP_LOGI(TAG, "Read Config Success , Bridge Start");
