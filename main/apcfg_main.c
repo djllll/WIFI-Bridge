@@ -35,6 +35,15 @@ static const char *TAG = "dns_server";
 extern  SemaphoreHandle_t sema_restart_to_bridge;
 
 
+
+/**
+ * @brief WIFI 事件处理
+ * 
+ * @param arg 
+ * @param event_base 
+ * @param event_id 
+ * @param event_data 
+ */
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
@@ -49,6 +58,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+
+/**
+ * @brief ap初始化
+ * 
+ */
 static void wifi_init_softap(void)
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -63,7 +77,7 @@ static void wifi_init_softap(void)
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
-    
+
     sprintf(wifi_config.ap.ssid,ESP_WIFI_SSID"%04x",(0xffff&(esp_random())));
     wifi_config.ap.ssid_len = strlen(wifi_config.ap.ssid);
 
@@ -86,7 +100,14 @@ static void wifi_init_softap(void)
              ESP_WIFI_SSID, ESP_WIFI_PASS);
 }
 
-// 解析键值对
+
+/**
+ * @brief 解析键值对
+ * 
+ * @param input 
+ * @param key 
+ * @param value 
+ */
 void parse_key_value(const char *input, char *key, char *value) {
     const char *equal_pos = strchr(input, '=');
     if (equal_pos != NULL) {
@@ -98,22 +119,13 @@ void parse_key_value(const char *input, char *key, char *value) {
 }
 
 
-/**
- * @brief mac地址解析
- * 
- * @param mac_str 
- * @param mac_array 
- * @return uint8_t 
- */
-uint8_t mac_string_to_array(const char *mac_str, uint8_t mac_array[6]) {
-    uint8_t ret = sscanf(mac_str, "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
-                     &mac_array[0], &mac_array[1], &mac_array[2],
-                     &mac_array[3], &mac_array[4], &mac_array[5]);
-    // 如果成功解析了6个十六进制值，则返回1表示成功
-    return (ret == 6) ? 1 : 0;
-}
 
-// HTTP GET Handler
+/**
+ * @brief 根url返回网页
+ * 
+ * @param req 
+ * @return esp_err_t 
+ */
 static esp_err_t root_get_handler(httpd_req_t *req)
 {
     const uint32_t root_len = root_end - root_start;
@@ -123,7 +135,12 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// HTTP POST Handler
+/**
+ * @brief 处理post表单提交
+ * 
+ * @param req 
+ * @return esp_err_t 
+ */
 static esp_err_t root_post_handler(httpd_req_t *req)
 {
     char buf[1024];
@@ -143,6 +160,7 @@ static esp_err_t root_post_handler(httpd_req_t *req)
     // 解析表单数据
     app_config_t cfg;
     char *token = strtok(buf, "&");
+    uint8_t mac_idx=0;
     while (token != NULL) {
         char key[CFG_STR_LEN];
         char value[CFG_STR_LEN];
@@ -156,8 +174,9 @@ static esp_err_t root_post_handler(httpd_req_t *req)
             strcpy(cfg.ap_name,(const char*)value);
         }else if(strcmp((const char *)key,"ap_pass")==0){
             strcpy(cfg.ap_pass,(const char*)value);
-        }else if(strcmp((const char *)key,"ap_mac")==0){
-            mac_string_to_array(value,cfg.mac);
+        }else if(strncmp((const char *)key,"ap_mac",6)==0){
+            cfg.mac[mac_idx] = strtol(value, NULL, 16);
+            mac_idx++;
         }else{
             ESP_LOGW(TAG,"Match Unkown");
         }
