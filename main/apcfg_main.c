@@ -15,6 +15,7 @@
 
 #include "esp_wifi.h"
 #include "esp_netif.h"
+#include "esp_random.h"
 #include "lwip/inet.h"
 
 #include "esp_http_server.h"
@@ -22,7 +23,8 @@
 
 #include "common.h"
 
-#define ESP_WIFI_SSID "esp-bridge-config"
+
+#define ESP_WIFI_SSID "esp-bridge-"
 #define ESP_WIFI_PASS "12345678"
 #define MAX_STA_CONN 2
 
@@ -56,13 +58,15 @@ static void wifi_init_softap(void)
 
     wifi_config_t wifi_config = {
         .ap = {
-            .ssid = ESP_WIFI_SSID,
-            .ssid_len = strlen(ESP_WIFI_SSID),
             .password = ESP_WIFI_PASS,
             .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
+    
+    sprintf(wifi_config.ap.ssid,ESP_WIFI_SSID"%04x",(0xffff&(esp_random())));
+    wifi_config.ap.ssid_len = strlen(wifi_config.ap.ssid);
+
     if (strlen(ESP_WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }

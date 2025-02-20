@@ -6,27 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>桥接配置</title>
     <script>
-        function formatMacAddress(input) {
+        function formatMacPart(input) {
             let value = input.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-            let formatted = '';
-            for (let i = 0; i < value.length; i++) {
-                if (i > 0 && i % 2 === 0) {
-                    formatted += ':'
-                }
-                formatted += value[i]
-            }
-            input.value = formatted.slice(0, 17);
+            input.value = value.slice(0, 2);
         }
+
         function validateForm() {
-            const macAddressInput = document.getElementById('ap_mac');
-            const macAddress = macAddressInput.value;
+            let macParts = [];
+            for (let i = 0; i < 6; i++) {
+                let input = document.getElementById(`ap_mac${i}`);
+                let part = input.value;
+                if (part.length !== 2 || !/^[0-9A-Fa-f]{2}$/.test(part)) {
+                    alert('请为每个部分输入有效的两位十六进制字符（0-9, A-F）');
+                    return false;
+                }
+                macParts.push(part);
+            }
+            const macAddress = macParts.join(':');
             const macRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
             if (!macRegex.test(macAddress)) {
                 alert('请输入有效的 MAC 地址，格式为 XX:XX:XX:XX:XX:XX');
                 return false;
             }
-            const macWithoutColons = macAddress.replace(/:/g, '');
-            macAddressInput.value = macWithoutColons;
+            // 合并六个输入框的值到一个隐藏输入框
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'ap_mac';
+            hiddenInput.value = macAddress.replace(/:/g, '');
+            document.forms[0].appendChild(hiddenInput);
             return true;
         }
     </script>
@@ -43,8 +50,13 @@
         <input type="text" id="ap_name" name="ap_name" value="SuMatrixMed" required><br><br>
         <label for="ap_pass">AP密码:</label><br>
         <input type="password" id="ap_pass" name="ap_pass" value="Matrix502" required minlength="8" maxlength="32"><br><br>
-        <label for="ap_mac">AP Mac地址:</label><br>
-        <input type="text" id="ap_mac" name="ap_mac" value="08:aa:89:7d:c1:96" required oninput="formatMacAddress(this)"><br><br>
+        <label>AP Mac地址:</label><br>
+        <input type="text" id="ap_mac0" name="ap_mac0" value="08" required oninput="formatMacPart(this)" size="2">:
+        <input type="text" id="ap_mac1" name="ap_mac1" value="aa" required oninput="formatMacPart(this)" size="2">:
+        <input type="text" id="ap_mac2" name="ap_mac2" value="89" required oninput="formatMacPart(this)" size="2">:
+        <input type="text" id="ap_mac3" name="ap_mac3" value="7d" required oninput="formatMacPart(this)" size="2">:
+        <input type="text" id="ap_mac4" name="ap_mac4" value="c1" required oninput="formatMacPart(this)" size="2">:
+        <input type="text" id="ap_mac5" name="ap_mac5" value="96" required oninput="formatMacPart(this)" size="2"><br><br>
         <input type="submit" value="确定" style="width: 80px; height: 30px;">
     </form>
 </body>
