@@ -78,8 +78,8 @@ static void wifi_init_softap(void)
         },
     };
 
-    sprintf(wifi_config.ap.ssid,ESP_WIFI_SSID"%04x",(0xffff&(esp_random())));
-    wifi_config.ap.ssid_len = strlen(wifi_config.ap.ssid);
+    sprintf((char*)wifi_config.ap.ssid,ESP_WIFI_SSID"%04x",(uint16_t)(0xffff&(esp_random())));
+    wifi_config.ap.ssid_len = strlen((char*)wifi_config.ap.ssid);
 
     if (strlen(ESP_WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
@@ -95,9 +95,6 @@ static void wifi_init_softap(void)
     char ip_addr[16];
     inet_ntoa_r(ip_info.ip.addr, ip_addr, 16);
     ESP_LOGI(TAG, "Set up softAP with IP: %s", ip_addr);
-
-    ESP_LOGI(TAG, "wifi_init_softap finished. SSID:'%s' password:'%s'",
-             ESP_WIFI_SSID, ESP_WIFI_PASS);
 }
 
 
