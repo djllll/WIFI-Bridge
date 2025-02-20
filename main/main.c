@@ -24,9 +24,10 @@ void hci_task(const void *param)
 {
     hci_init();
     uint8_t btn_long_press_cnt = 0;
+    // 等待按键放开，防止再次重启
     while(gpio_get_level(BTN_GPIO)==0){
         vTaskDelay(5);
-        ESP_LOGI(TAG,"waiting");
+        ESP_LOGI(TAG,"Btn Release Waiting");
     }
     while (1) {
         vTaskDelay(2);
@@ -36,7 +37,7 @@ void hci_task(const void *param)
         }
         if (gpio_get_level(BTN_GPIO) == 0) {
             btn_long_press_cnt++;
-            if (btn_long_press_cnt >= 3000 / 20) {
+            if (btn_long_press_cnt >= 3000 / 30) {
                 hci_deinit();
                 app_restart_to_webcfg();
             }
