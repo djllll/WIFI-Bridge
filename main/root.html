@@ -10,32 +10,6 @@
             let value = input.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
             input.value = value.slice(0, 2);
         }
-
-        function validateForm() {
-            let macParts = [];
-            for (let i = 0; i < 6; i++) {
-                let input = document.getElementById(`ap_mac${i}`);
-                let part = input.value;
-                if (part.length !== 2 || !/^[0-9A-Fa-f]{2}$/.test(part)) {
-                    alert('请为每个部分输入有效的两位十六进制字符（0-9, A-F）');
-                    return false;
-                }
-                macParts.push(part);
-            }
-            const macAddress = macParts.join(':');
-            const macRegex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
-            if (!macRegex.test(macAddress)) {
-                alert('请输入有效的 MAC 地址，格式为 XX:XX:XX:XX:XX:XX');
-                return false;
-            }
-            // 合并六个输入框的值到一个隐藏输入框
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'ap_mac';
-            hiddenInput.value = macAddress.replace(/:/g, '');
-            document.forms[0].appendChild(hiddenInput);
-            return true;
-        }
     </script>
 </head>
 
@@ -47,16 +21,23 @@
         <label for="sta_pass">STA密码:</label><br>
         <input type="password" id="sta_pass" name="sta_pass" required minlength="8" maxlength="32"><br><br>
         <label for="ap_name">AP名称:</label><br>
-        <input type="text" id="ap_name" name="ap_name" value="SuMatrixMed" required><br><br>
+        <input type="text" id="ap_name" name="ap_name" value="AP_NAME" required><br><br>
         <label for="ap_pass">AP密码:</label><br>
-        <input type="password" id="ap_pass" name="ap_pass" value="Matrix502" required minlength="8" maxlength="32"><br><br>
+        <input type="password" id="ap_pass" name="ap_pass" value="AP_PASSWORD" required minlength="8"
+            maxlength="32"><br><br>
         <label>AP Mac地址:</label><br>
-        <input type="text" id="ap_mac0" name="ap_mac0" value="08" required oninput="formatMacPart(this)" size="2">:
-        <input type="text" id="ap_mac1" name="ap_mac1" value="aa" required oninput="formatMacPart(this)" size="2">:
-        <input type="text" id="ap_mac2" name="ap_mac2" value="89" required oninput="formatMacPart(this)" size="2">:
-        <input type="text" id="ap_mac3" name="ap_mac3" value="7d" required oninput="formatMacPart(this)" size="2">:
-        <input type="text" id="ap_mac4" name="ap_mac4" value="c1" required oninput="formatMacPart(this)" size="2">:
-        <input type="text" id="ap_mac5" name="ap_mac5" value="96" required oninput="formatMacPart(this)" size="2"><br><br>
+        <input type="text" id="ap_mac0" name="ap_mac0" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2">:
+        <input type="text" id="ap_mac1" name="ap_mac1" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2">:
+        <input type="text" id="ap_mac2" name="ap_mac2" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2">:
+        <input type="text" id="ap_mac3" name="ap_mac3" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2">:
+        <input type="text" id="ap_mac4" name="ap_mac4" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2">:
+        <input type="text" id="ap_mac5" name="ap_mac5" value="00" required oninput="formatMacPart(this)" size="2"
+            minlength="2" maxlength="2"><br><br>
         <input type="submit" value="确定" style="width: 80px; height: 30px;">
     </form>
 </body>
