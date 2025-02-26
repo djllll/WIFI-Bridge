@@ -41,6 +41,20 @@
 */
 
 extern app_config_t global_cfg;
+extern SemaphoreHandle_t sema_bridge_err;
+
+static const char *TAG_AP = "WiFi SoftAP";
+static const char *TAG_STA = "WiFi Sta";
+
+#define BRIDGE_ERR_CHECK(_f)                            \
+    if (_f != ESP_OK) {                                 \
+        xSemaphoreGive(sema_bridge_err);                \
+        while (1) {                                     \
+            ESP_LOGW(TAG_AP, "appbridge_check_error!"); \
+            vTaskDelay(1000);                           \
+        };                                              \
+    }
+
 
 /* STA Configuration */
 #define ESP_MAXIMUM_RETRY           3
@@ -56,10 +70,10 @@ extern app_config_t global_cfg;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-static const char *TAG_AP = "WiFi SoftAP";
-static const char *TAG_STA = "WiFi Sta";
+
 
 static int s_retry_num = 0;
+
 
 /* FreeRTOS event group to signal when we are connected/disconnected */
 static EventGroupHandle_t s_wifi_event_group;
@@ -110,7 +124,7 @@ esp_netif_t *wifi_init_softap(void)
     strcpy((char*)wifi_ap_config.ap.ssid,(const char*)global_cfg.ap_name);
     strcpy((char*)wifi_ap_config.ap.password,(const char*)global_cfg.ap_pass);
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
+    BRIDGE_ERR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
 
     ESP_LOGI(TAG_AP, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
              global_cfg.ap_name, global_cfg.ap_pass, ESP_WIFI_CHANNEL);
@@ -139,7 +153,7 @@ esp_netif_t *wifi_init_sta(void)
     strcpy((char*)wifi_sta_config.sta.ssid,(const char*)global_cfg.sta_name);
     strcpy((char*)wifi_sta_config.sta.password,(const char*)global_cfg.sta_pass);
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_sta_config) );
+    BRIDGE_ERR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_sta_config) );
 
     ESP_LOGI(TAG_STA, "wifi_init_sta finished.");
 
@@ -148,23 +162,21 @@ esp_netif_t *wifi_init_sta(void)
 
 void bridge_main(void)
 {
-
-    
     // 初始化netif
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    BRIDGE_ERR_CHECK(esp_netif_init());
+    BRIDGE_ERR_CHECK(esp_event_loop_create_default());
 
 
     /* Initialize event group */
     s_wifi_event_group = xEventGroupCreate();
 
     /* Register Event handler */
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+    BRIDGE_ERR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     ESP_EVENT_ANY_ID,
                     &wifi_event_handler,
                     NULL,
                     NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+    BRIDGE_ERR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                     IP_EVENT_STA_GOT_IP,
                     &wifi_event_handler,
                     NULL,
@@ -172,9 +184,9 @@ void bridge_main(void)
 
     /*Initialize WiFi */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    BRIDGE_ERR_CHECK(esp_wifi_init(&cfg));
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    BRIDGE_ERR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
 
     /* Initialize AP */
@@ -186,10 +198,10 @@ void bridge_main(void)
     esp_netif_t *esp_netif_sta = wifi_init_sta();
 
     ESP_LOGI(TAG_AP, "Custom MAC:"MACSTR,MAC2STR(global_cfg.mac));
-    ESP_ERROR_CHECK(esp_wifi_set_mac(ESP_IF_WIFI_AP, global_cfg.mac));
+    BRIDGE_ERR_CHECK(esp_wifi_set_mac(ESP_IF_WIFI_AP, global_cfg.mac));
 
     /* Start WiFi */
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    BRIDGE_ERR_CHECK(esp_wifi_start());
 
     /*
      * Wait until either the connection is established (WIFI_CONNECTED_BIT) or
@@ -200,7 +212,7 @@ void bridge_main(void)
                                            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
                                            pdFALSE,
                                            pdFALSE,
-                                           portMAX_DELAY);
+                                           1000);
 
     /* xEventGroupWaitBits() returns the bits before the call returned,
      * hence we can test which event actually happened. */

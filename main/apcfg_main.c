@@ -15,7 +15,6 @@
 
 #include "esp_wifi.h"
 #include "esp_netif.h"
-#include "esp_random.h"
 #include "lwip/inet.h"
 
 #include "esp_http_server.h"
@@ -32,8 +31,17 @@ extern const char root_start[] asm("_binary_root_html_start");
 extern const char root_end[] asm("_binary_root_html_end");
 static const char *TAG = "dns_server";
 
-extern  SemaphoreHandle_t sema_restart_to_bridge;
+extern  SemaphoreHandle_t sema_config_post_finish;
+extern SemaphoreHandle_t sema_config_err;
 
+#define CFG_ERR_CHECK(_f)                            \
+    if (_f != ESP_OK) {                                 \
+        xSemaphoreGive(sema_config_err); \
+        while (1) {                                     \
+            ESP_LOGW(TAG, "appconfig_check_error!");    \
+            vTaskDelay(1000);                            \
+        };                                              \
+    }
 
 
 /**
@@ -66,9 +74,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 static void wifi_init_softap(void)
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    CFG_ERR_CHECK(esp_wifi_init(&cfg));
 
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    CFG_ERR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
 
     wifi_config_t wifi_config = {
         .ap = {
@@ -77,17 +85,24 @@ static void wifi_init_softap(void)
             .authmode = WIFI_AUTH_WPA_WPA2_PSK
         },
     };
+    uint8_t fuse_mac[6];
+    CFG_ERR_CHECK(esp_base_mac_addr_get(fuse_mac));
+    uint16_t only_postfix = 0;
+    for (uint8_t i = 0; i < 6; i++) {
+        only_postfix += fuse_mac[i];
+    }
 
-    sprintf((char*)wifi_config.ap.ssid,ESP_WIFI_SSID"%04x",(uint16_t)(0xffff&(esp_random())));
+
+    sprintf((char*)wifi_config.ap.ssid,ESP_WIFI_SSID"%04d",only_postfix);
     wifi_config.ap.ssid_len = strlen((char*)wifi_config.ap.ssid);
 
     if (strlen(ESP_WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    CFG_ERR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    CFG_ERR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    CFG_ERR_CHECK(esp_wifi_start());
 
     esp_netif_ip_info_t ip_info;
     esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"), &ip_info);
@@ -184,10 +199,10 @@ static esp_err_t root_post_handler(httpd_req_t *req)
 
 
     // 发送响应
-    const char *resp_str = "Reboot...";
+    const char *resp_str = "Configure Success, Press and hold the button to switch the mode.";
     httpd_resp_send(req, resp_str, strlen(resp_str));
 
-    xSemaphoreGive(sema_restart_to_bridge);
+    xSemaphoreGive(sema_config_post_finish);
 
     return ESP_OK;
 }
@@ -250,10 +265,10 @@ void appcfg_main(void)
 
 
     // Initialize networking stack
-    ESP_ERROR_CHECK(esp_netif_init());
+    CFG_ERR_CHECK(esp_netif_init());
 
     // Create default event loop needed by the  main app
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    CFG_ERR_CHECK(esp_event_loop_create_default());
 
 
 
