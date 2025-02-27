@@ -9,6 +9,22 @@
         function formatMacPart(input) {
             let value = input.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
             input.value = value.slice(0, 2);
+            if (value.length === 2) {
+                let nextInput = getNextInput(input);
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+        }
+
+        function getNextInput(currentInput) {
+            let inputs = document.querySelectorAll('input[name^="ap_mac"]');
+            for (let i = 0; i < inputs.length; i++) {
+                if (inputs[i] === currentInput && i < inputs.length - 1) {
+                    return inputs[i + 1];
+                }
+            }
+            return null;
         }
     </script>
 </head>
@@ -26,17 +42,18 @@
         <input type="password" id="ap_pass" name="ap_pass" value="AP_PASSWORD" required minlength="8"
             maxlength="32"><br><br>
         <label>AP Mac地址:</label><br>
-        <input type="text" id="ap_mac0" name="ap_mac0" value="00" required oninput="formatMacPart(this)" size="2"
+        <!-- 将默认值改为空 -->
+        <input type="text" id="ap_mac0" name="ap_mac0" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac1" name="ap_mac1" value="00" required oninput="formatMacPart(this)" size="2"
+        <input type="text" id="ap_mac1" name="ap_mac1" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac2" name="ap_mac2" value="00" required oninput="formatMacPart(this)" size="2"
+        <input type="text" id="ap_mac2" name="ap_mac2" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac3" name="ap_mac3" value="00" required oninput="formatMacPart(this)" size="2"
+        <input type="text" id="ap_mac3" name="ap_mac3" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac4" name="ap_mac4" value="00" required oninput="formatMacPart(this)" size="2"
+        <input type="text" id="ap_mac4" name="ap_mac4" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac5" name="ap_mac5" value="00" required oninput="formatMacPart(this)" size="2"
+        <input type="text" id="ap_mac5" name="ap_mac5" required oninput="formatMacPart(this)" size="2"
             minlength="2" maxlength="2"><br><br>
         <input type="submit" value="确定" style="width: 80px; height: 30px;">
     </form>
