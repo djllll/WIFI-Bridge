@@ -223,6 +223,7 @@ void bridge_main(void)
         ESP_LOGI(TAG_STA, "Failed to connect to SSID:%s, password:%s",
                  global_cfg.sta_name, global_cfg.sta_pass);
     } else {
+        xSemaphoreGive(sema_bridge_err);     
         ESP_LOGE(TAG_STA, "UNEXPECTED EVENT");
         return;
     }
