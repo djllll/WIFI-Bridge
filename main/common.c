@@ -45,7 +45,16 @@ uint8_t app_config_load(app_config_t *config)
         sumcheck = (uint8_t)(((uint16_t)sumcheck + config->sta_name[i]) & 0xff);
         sumcheck = (uint8_t)(((uint16_t)sumcheck + config->sta_pass[i]) & 0xff);
     }
-    return sumcheck == config->sumcheck ? CFG_LOAD_SUCCESS : CFG_LOAD_FAIL;
+    if(sumcheck==config->sumcheck){
+        config->checked=1;
+    }else{
+        config->checked=0;
+        config->sta_name[0]=0;
+        config->sta_pass[0]=0;
+        config->ap_pass[0]=0;
+        config->ap_name[0]=0;
+    }
+    return config->checked ? CFG_LOAD_SUCCESS : CFG_LOAD_FAIL;
 }
 
 

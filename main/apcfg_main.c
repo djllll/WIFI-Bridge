@@ -34,6 +34,8 @@ static const char *TAG = "dns_server";
 extern  SemaphoreHandle_t sema_config_post_finish;
 extern SemaphoreHandle_t sema_config_err;
 
+extern app_config_t global_cfg;
+ 
 #define CFG_ERR_CHECK(_f)                            \
     if (_f != ESP_OK) {                                 \
         xSemaphoreGive(sema_config_err); \
@@ -147,6 +149,31 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+
+/**
+ * @brief 查询当前配置数据
+ * 
+ * @param req 
+ * @return esp_err_t 
+ */
+static esp_err_t config_get_handler(httpd_req_t *req)
+{
+    char ret[512];
+    int len = sprintf(ret, "{ \
+    \"sta_name\":\"%s\", \
+    \"sta_pass\":\"%s\", \
+    \"ap_name\":\"%s\", \
+    \"ap_pass\":\"%s\", \
+    \"ap_mac\":\"" MACSTR "\" \
+    }",
+            global_cfg.sta_name, global_cfg.sta_pass, global_cfg.ap_name, global_cfg.ap_pass, MAC2STR(global_cfg.mac));
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, ret, len);
+    return ESP_OK;
+}
+
+
 /**
  * @brief 处理post表单提交
  * 
@@ -220,6 +247,14 @@ static const httpd_uri_t root_post = {
     .handler = root_post_handler
 };
 
+
+static const httpd_uri_t config_get = {
+    .uri = "/config",
+    .method = HTTP_GET,
+    .handler = config_get_handler
+};
+
+
 // HTTP Error (404) Handler - Redirects all requests to the root page
 esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
 {
@@ -248,6 +283,7 @@ static httpd_handle_t start_webserver(void)
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &root);
         httpd_register_uri_handler(server, &root_post);
+        httpd_register_uri_handler(server, &config_get);
         httpd_register_err_handler(server, HTTPD_404_NOT_FOUND, http_404_error_handler);
     }
     return server;

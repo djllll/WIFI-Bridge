@@ -26,6 +26,29 @@
             }
             return null;
         }
+
+        window.onload = function () {
+            fetch('/config')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('sta_name').value = data.sta_name;
+                    document.getElementById('sta_pass').value = data.sta_pass;
+                    document.getElementById('ap_name').value = data.ap_name;
+                    document.getElementById('ap_pass').value = data.ap_pass;
+                    const macParts = data.ap_mac.split(':');
+                    for (let i = 0; i < macParts.length; i++) {
+                        document.getElementById(`ap_mac${i}`).value = macParts[i];
+                    }
+                })
+                .catch(error => {
+                    console.error('请求数据时出错:', error);
+                });
+        };
     </script>
 </head>
 
@@ -43,18 +66,18 @@
             maxlength="32"><br><br>
         <label>AP Mac地址:</label><br>
         <!-- 将默认值改为空 -->
-        <input type="text" id="ap_mac0" name="ap_mac0" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac1" name="ap_mac1" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac2" name="ap_mac2" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac3" name="ap_mac3" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac4" name="ap_mac4" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2">:
-        <input type="text" id="ap_mac5" name="ap_mac5" required oninput="formatMacPart(this)" size="2"
-            minlength="2" maxlength="2"><br><br>
+        <input type="text" id="ap_mac0" name="ap_mac0" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2">:
+        <input type="text" id="ap_mac1" name="ap_mac1" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2">:
+        <input type="text" id="ap_mac2" name="ap_mac2" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2">:
+        <input type="text" id="ap_mac3" name="ap_mac3" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2">:
+        <input type="text" id="ap_mac4" name="ap_mac4" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2">:
+        <input type="text" id="ap_mac5" name="ap_mac5" required oninput="formatMacPart(this)" size="2" minlength="2"
+            maxlength="2"><br><br>
         <input type="submit" value="确定" style="width: 80px; height: 30px;">
     </form>
 </body>

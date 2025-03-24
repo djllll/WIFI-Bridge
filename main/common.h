@@ -21,6 +21,7 @@ typedef struct{
     char ap_pass[CFG_STR_LEN];
     uint8_t mac[6];
     uint8_t sumcheck;
+    uint8_t checked;
 }app_config_t;
 
 typedef enum {
