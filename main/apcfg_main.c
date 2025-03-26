@@ -173,6 +173,14 @@ static esp_err_t config_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// 字符替换函数
+static void replace_char(char *str, char old_char, char new_char) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == old_char) {
+            str[i] = new_char;
+        }
+    }
+}
 
 /**
  * @brief 处理post表单提交
@@ -221,6 +229,11 @@ static esp_err_t root_post_handler(httpd_req_t *req)
         }
         token = strtok(NULL, "&");
     }
+
+    // 提交上来的ssid的空格会被转义为+ 还原
+    replace_char(cfg.sta_name,'+',' ');
+    replace_char(cfg.ap_name,'+',' ');
+
     app_config_save(&cfg);
 
 
